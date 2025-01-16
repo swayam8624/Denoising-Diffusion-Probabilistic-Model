@@ -72,11 +72,13 @@ class DiffusionModel(pl.LightningModule):
             return x
 
     def training_step(self, batch, batch_idx):
+        batch = batch.to(device) 
         loss = self.get_loss(batch, batch_idx)
         self.log("train/loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
+        batch = batch.to(device) 
         loss = self.get_loss(batch, batch_idx)
         self.log("val/loss", loss)
         return
