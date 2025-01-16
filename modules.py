@@ -190,7 +190,7 @@ class Unet(nn.Module):
         dims = [init_dim, *map(lambda m: dim * m, dim_mults)] # Builds multiples of the initial dimensions, used for the encoder and the decoder
         in_out = list(zip(dims[:-1], dims[1:])) # Builds a map of input-output dimensions for the encoder and the decoder
 
-        block_class = partial(ResnetBlock, groups = resnet_block_groups) # Initializes the number of groups for Group Normalization
+        block_klass = partial(ResnetBlock, groups = resnet_block_groups) # Initializes the number of groups for Group Normalization
 
         # time embeddings
         time_dim = dim * 4 # The size of the time embedding

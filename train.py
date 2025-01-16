@@ -10,6 +10,9 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import os
 
+
+device = "mps" if torch.backends.mps.is_available() else "cpu"
+
 def sample_gif(model, train_dataset, output_dir) -> None:
     gif_shape = [3, 3]  # The gif will be a grid of images of this shape
     sample_batch_size = gif_shape[0] * gif_shape[1]
@@ -100,7 +103,7 @@ def train_model(config: dict) -> None:
         train_dataset, batch_size=config["batch_size"], num_workers=4, shuffle=True
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=config["batch_size"], num_workers=4, shuffle=True
+        val_dataset, batch_size=config["batch_size"], num_workers=4, shuffle=False ,persistent_workers=True
     )
 
     # Create model and trainer
@@ -110,13 +113,13 @@ def train_model(config: dict) -> None:
             in_size=train_dataset.size * train_dataset.size,
             t_range=config["diffusion_steps"],
             img_depth=train_dataset.depth,
-        )
+        ).to(device)
     else:
         model = DiffusionModel(
             train_dataset.size * train_dataset.size,
             config["diffusion_steps"],
             train_dataset.depth,
-        )
+        ).to(device)
 
     # Load Trainer model
     tb_logger = pl.loggers.TensorBoardLogger(
@@ -125,7 +128,8 @@ def train_model(config: dict) -> None:
         version=pass_version,
     )
 
-    trainer = pl.Trainer(max_epochs=config["max_epoch"], log_every_n_steps=10, logger=tb_logger)
+    trainer = pl.Trainer(max_epochs=config["max_epoch"], log_every_n_steps=10, logger=tb_logger , accelerator="mps", # Ensure this is set to MPS
+    devices=1)
 
     # Train model
     trainer.fit(model, train_loader, val_loader)

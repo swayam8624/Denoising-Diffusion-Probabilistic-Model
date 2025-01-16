@@ -5,6 +5,8 @@ import pytorch_lightning as pl
 import math
 from modules import *
 
+device = "mps" if torch.backends.mps.is_available() else "cpu"
+
 
 class DiffusionModel(pl.LightningModule):
     def __init__(self, in_size, t_range, img_depth):
@@ -34,6 +36,7 @@ class DiffusionModel(pl.LightningModule):
         """
         Corresponds to Algorithm 1 from (Ho et al., 2020).
         """
+        batch = batch.to(self.device)
         # Get a random time step for each image in the batch
         ts = torch.randint(0, self.t_range, [batch.shape[0]], device=self.device)
         noise_imgs = []
@@ -57,6 +60,7 @@ class DiffusionModel(pl.LightningModule):
         """
         Corresponds to the inner loop of Algorithm 2 from (Ho et al., 2020).
         """
+        x = x.to(self.device) 
         with torch.no_grad():
             if t > 1:
                 z = torch.randn(x.shape)
@@ -72,13 +76,13 @@ class DiffusionModel(pl.LightningModule):
             return x
 
     def training_step(self, batch, batch_idx):
-        batch = batch.to(device) 
+        batch = batch.to(self.device) 
         loss = self.get_loss(batch, batch_idx)
         self.log("train/loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        batch = batch.to(device) 
+        batch = batch.to(self.device) 
         loss = self.get_loss(batch, batch_idx)
         self.log("val/loss", loss)
         return
